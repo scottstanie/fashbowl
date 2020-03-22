@@ -4,42 +4,62 @@
 {% endblock %}
 
 {% block body %}
-    <body>
-        <div class="row flex-nowrap app-area">
-            <div class="col-channel-width color-channel-test">
-                <h4 id="user"></h4>
-                <h1 id="channel-heading">Channels</h1>
-                <form id="add-channel-form">
-                    <div class="input-group mb-3 channel-input">
-                        <input id="channel" type="text" class="form-control" placeholder="New channel name" aria-describedby="basic-addon2">
-                        <div class="input-group-append">
-                            <button id="submit-add-channel" type="submit" class="btn btn-light add-button"><div id="plus">+</div></button>
-                        </div>
+
+<body>
+    <div class="row flex-nowrap app-area">
+        <div class="col-channel-width color-channel-test">
+            <h4 id="user"></h4>
+            <h1 id="channel-heading">Channels</h1>
+            <form id="add-channel-form">
+                <div class="input-group mb-3 channel-input">
+                    <input id="channel" type="text" class="form-control" placeholder="New channel name"
+                        aria-describedby="basic-addon2">
+                    <div class="input-group-append">
+                        <button id="submit-add-channel" type="submit" class="btn btn-light add-button">
+                            <div id="plus">+</div>
+                        </button>
                     </div>
+                </div>
+            </form>
+            <ul id="channels">
+                {% for channel in channel_list %}
+                <form id="switch-channel-form">
+                    <button id="submit-switch-channel" type="submit" value={{channel}}>
+                        <li id="channel-option"># {{channel}}</li>
+                    </button>
                 </form>
-                <ul id="channels">
-                    {% for channel in channel_list %}
-                        <form id="switch-channel-form">
-                            <button id="submit-switch-channel" type="submit" value={{channel}}><li id="channel-option"># {{channel}}</li></button>
-                        </form>
-                    {% endfor %}
+                {% endfor %}
+            </ul>
+            <form id="word-form">
+                <div class="input-group mb-1 message-input">
+                    <input id="word-input" type="text" class="form-control" placeholder="Submit my word here"
+                        aria-describedby="basic-addon2">
+                    <div class="input-group-append">
+                        <button id="submit-send-word" type="submit" class="btn btn-light add-button">
+                            <div id="word-submit">Submit</div>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div id="message-view" class="col color-message-test">
+            <div class="comment-container">
+                <ul id="comment-list" class="list-unstyled">
                 </ul>
             </div>
-            <div id="message-view" class="col color-message-test">
-                <div class="comment-container">
-                    <ul id="comment-list" class="list-unstyled">
-                    </ul>
-                </div>
-                <form id="message-form">
-                    <div class="input-group mb-3 message-input">
-                        <input id="message-input" type="text" class="form-control" placeholder="Enter message here" aria-describedby="basic-addon2">
-                        <div class="input-group-append">
-                            <button id="submit-send-message" type="submit" class="btn btn-light add-button"><div id="send">Send</div></button>
-                        </div>
+            <form id="message-form">
+                <div class="input-group mb-1 message-input">
+                    <input id="message-input" type="text" class="form-control" placeholder="Enter message here"
+                        aria-describedby="basic-addon2">
+                    <div class="input-group-append">
+                        <button id="submit-send-message" type="submit" class="btn btn-light add-button">
+                            <div id="send">Send</div>
+                        </button>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
+    </div>
 
-    </body>
+</body>
 {% endblock %}

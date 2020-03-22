@@ -1,8 +1,10 @@
 import os
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, g
 from flask_socketio import SocketIO, emit, join_room, leave_room
 # import json
+import sqlite3
+from collections import defaultdict
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
@@ -11,6 +13,39 @@ socketio = SocketIO(app)
 # Channel Data Global Variables
 channel_list = {"general": []}
 present_channel = {"initial": "general"}
+# submitted_words[channel][user]:
+submitted_words = defaultdict(lambda: defaultdict(str))
+# TODO: team name instead of red/blue
+team_points = defaultdict(int)
+team_points["red"] = 0
+team_points["blue"] = 0
+# team_points = {"red": 0, "blue": 0}
+
+DATABASE = 'database.db'
+
+
+def connect_db():
+    return sqlite3.connect(DATABASE)
+
+
+@app.before_request
+def before_request():
+    g.db = connect_db()
+
+
+@app.teardown_request
+def teardown_request(exception):
+    if hasattr(g, 'db'):
+        g.db.close()
+
+
+def query_db(query, args=(), one=False):
+    cur = g.db.execute(query, args)
+    rv = [
+        dict((cur.description[idx][0], value) for idx, value in enumerate(row))
+        for row in cur.fetchall()
+    ]
+    return (rv[0] if rv else None) if one else rv
 
 
 @app.route("/", methods=["POST", "GET"])
@@ -55,6 +90,22 @@ def send_message(message_data):
         del channel_list[channel][0]
         message_data["deleted_message"] = True
     emit("recieve message", message_data, broadcast=True, room=channel)
+
+
+@socketio.on("send word")
+def send_word(message_data):
+    print(message_data)
+    channel = message_data["current_channel"]
+    user = message_data["user"]
+
+    # TODO: check here for bad word
+
+    if submitted_words[channel][user]:
+        print("already submitted, changing")
+    submitted_words[channel][user] = message_data["submitted_word"]
+    # emit("recieve word", message_data, broadcast=True, room=channel)
+    print("submitted words:")
+    print(submitted_words)
 
 
 @socketio.on("delete channel")
