@@ -251,6 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('emit start game');
     socket.emit('start game');
   };
+  document.querySelector('#startround').onclick = () => {
+    console.log('emit start round');
+    socket.emit('start round');
+  };
 
 
 
@@ -312,10 +316,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('#countdown').innerHTML = count;
     document.querySelector('#cluegiver').innerHTML =
         'Clue giver:' + message_data['clue_giver'];
-    if (is_giver) {
-      document.querySelector('#currentword').innerHTML =
-          'Your word to give:' + current_word;
-    }
+    let clueString = is_giver ? 'Your word to give:' + current_word : '';
+    document.querySelector('#currentword').innerHTML = clueString;
+  });
+  socket.on('score update', message_data => {
+    // const li = document.createElement('li');
+    // li.setAttribute('class', 'media comment-item');
+    let redscore = message_data['red'];
+    let bluescore = message_data['blue'];
+
+    document.querySelector('#redteam').innerHTML =
+        'Red Team: ' + String(redscore);
+    document.querySelector('#blueteam').innerHTML =
+        'Blue Team: ' + String(bluescore);
   });
 
 

@@ -130,3 +130,7 @@ h5, #time {
       font-family: "Josefin Sans", sans-serif; }
 
 /*# sourceMappingURL=styles.css.map */
+#team-scores {
+  color: #8C93B3;
+  font-family: "Josefin Sans", sans-serif;
+  font-size: 130%; }

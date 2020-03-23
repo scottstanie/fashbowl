@@ -1,5 +1,5 @@
 import os
-
+import itertools
 from threading import Lock
 import copy
 from flask import Flask, render_template, request, jsonify, g
@@ -23,31 +23,33 @@ present_channel = {"initial": "general"}
 # submitted_words = defaultdict(lambda: defaultdict(str))
 submitted_words = defaultdict(str)
 
+# TODO: add scoreboard, add CLEAR ALL button
+
 BLUE_TEAM = "blue"
 RED_TEAM = "red"
+IS_ROUND_DONE = False
 # Team data: points and team members
-# TODO: team name instead of red/blue
-# # team_members[channel]["red"] = {"user 1", ...}
-# team_members = defaultdict(lambda: defaultdict(set))
-# # team_points[channel]["blue"] = 1
-# team_points = defaultdict(lambda: defaultdict(int))
+# # TEAM_MEMBERS[channel]["red"] = {"user 1", ...}
+# TEAM_MEMBERS = defaultdict(lambda: defaultdict(set))
+# # TEAM_POINTS[channel]["blue"] = 1
+# TEAM_POINTS = defaultdict(lambda: defaultdict(int))
 
-# team_members["red"] = {"user 1", ...}
-team_members = defaultdict(set)
-# team_points["blue"] = 1
-team_points = defaultdict(int)
-red_team_order = None
-blue_team_order = None
+# TEAM_MEMBERS["red"] = {"user 1", ...}
+TEAM_MEMBERS = defaultdict(set)
+# TEAM_POINTS["blue"] = 1
+TEAM_POINTS = defaultdict(int)
+RED_TEAM_CYCLE = None
+BLUE_TEAM_CYCLE = None
 
-# # current_round[channel] = 1  OR 2, or 3
-# current_round = defaultdict(int)
-is_live_round = False
-current_round = 0
-clue_giver = ""
-all_words = []
-current_word = ""
-guessed_words = set()
-guessing_team = RED_TEAM
+# # CURRENT_ROUND[channel] = 1  OR 2, or 3
+# CURRENT_ROUND = defaultdict(int)
+IS_LIVE_ROUND = False
+CURRENT_ROUND = 0
+CLUE_GIVER = ""
+ALL_WORDS = []
+CURRENT_WORD = ""
+GUESSED_WORDS = set()
+GUESSING_TEAM = RED_TEAM
 
 DATABASE = 'database.db'
 
@@ -58,30 +60,6 @@ DATABASE = 'database.db'
 # - pick order of clue givers for each team
 # - start round 1: timer goes off for 60 seconds, start random.choice on words
 #       - here's where button shows up and they can skip
-
-
-def connect_db():
-    return sqlite3.connect(DATABASE)
-
-
-@app.before_request
-def before_request():
-    g.db = connect_db()
-
-
-@app.teardown_request
-def teardown_request(exception):
-    if hasattr(g, 'db'):
-        g.db.close()
-
-
-def query_db(query, args=(), one=False):
-    cur = g.db.execute(query, args)
-    rv = [
-        dict((cur.description[idx][0], value) for idx, value in enumerate(row))
-        for row in cur.fetchall()
-    ]
-    return (rv[0] if rv else None) if one else rv
 
 
 @app.route("/", methods=["POST", "GET"])
@@ -120,7 +98,7 @@ def create_channel(new_channel):
 
 @socketio.on("send message")
 def send_message(message_data):
-    global guessing_team
+    global GUESSING_TEAM
     # print(channel_list)
     channel = message_data["current_channel"]
     channel_message_count = len(channel_list[channel])
@@ -132,35 +110,52 @@ def send_message(message_data):
         message_data["deleted_message"] = True
 
     emit("recieve message", message_data, broadcast=True, room=channel)
-    if is_live_round:
+    # We're only checking for matching/scoring while the round is live
+    if IS_LIVE_ROUND:
         message_content = message_data["message_content"]
-        if check_guess(message_content):
-            message_data["message_content"] = "Point for Team %s" % guessing_team
+        guess_result = check_guess(message_content)
+        if guess_result is True:
+            message_data["message_content"] = "Point for Team %s!!" % GUESSING_TEAM
             emit("recieve message", message_data, broadcast=True, room=channel)
-            m = "Score: Team Red: %s, Team blue: %s" % (team_points[RED_TEAM],
-                                                        team_points[BLUE_TEAM])
-            message_data["message_content"] = m
-            emit("recieve message", message_data, broadcast=True, room=channel)
+            emit(
+                "score update",
+                {
+                    "red": TEAM_POINTS[RED_TEAM],
+                    "blue": TEAM_POINTS[BLUE_TEAM]
+                },
+                broadcast=True,
+            )
+            # m = "Score: Team Red: %s, Team blue: %s" % (TEAM_POINTS[RED_TEAM], TEAM_POINTS[BLUE_TEAM])
+            # message_data["message_content"] = m
+            # emit("recieve message", message_data, broadcast=True, room=channel)
+
+
+def reset_round():
+    global CURRENT_ROUND, GUESSED_WORDS
+    CURRENT_ROUND += 1
+    GUESSED_WORDS = set()
 
 
 def check_guess(message_content):
-    global all_words, current_word, guessing_team, guessed_words
-    print("GUESED!", message_content, current_word)
-    if message_content.lower() == current_word.lower():
+    global ALL_WORDS, CURRENT_WORD, GUESSING_TEAM, GUESSED_WORDS, TEAM_POINTS, IS_ROUND_DONE
+    print("GUESED!", message_content, CURRENT_WORD)
+    if message_content.lower() == CURRENT_WORD.lower():
         print("RIGHT")
-        team_points[guessing_team] += 1
-        guessed_words.add(current_word)
-        remaining_words = set.difference(set(all_words), set(guessed_words))
+        TEAM_POINTS[GUESSING_TEAM] += 1
+        GUESSED_WORDS.add(CURRENT_WORD)
+        remaining_words = set.difference(set(ALL_WORDS), set(GUESSED_WORDS))
         print("all, remaining")
-        print(all_words, remaining_words)
+        print(ALL_WORDS, remaining_words)
         if not remaining_words:
-            current_word = "ALL DONE: ROUND OVER"
+            CURRENT_WORD = "ALL DONE: ROUND OVER"
+            IS_ROUND_DONE = True
         else:
-            current_word = random.choice(list(remaining_words))
+            CURRENT_WORD = random.choice(list(remaining_words))
         return True
     return False
 
 
+# For writing down word at beginning and sticking in the fishbowl
 @socketio.on("send word")
 def send_word(message_data):
     print(message_data)
@@ -183,57 +178,58 @@ def select_team(message_data):
     user = message_data["user"]
     team = message_data["team"]
 
-    # team_members[channel][team].add(user)
-    team_members[team].add(user)
+    # TEAM_MEMBERS[channel][team].add(user)
+    TEAM_MEMBERS[team].add(user)
     other_team = RED_TEAM if team == BLUE_TEAM else BLUE_TEAM
-    team_members[other_team].discard(user)
+    TEAM_MEMBERS[other_team].discard(user)
     # emit("recieve word", message_data, broadcast=True, room=channel)
     print("teams:")
-    print(team_members)
+    print(TEAM_MEMBERS)
     # TODO: add socketio handler for teams, and display
     # emit("recieve team", message_data, broadcast=True, room=channel)
 
 
 @socketio.on("start game")
 def start_game():
-    global all_words, clue_giver, current_round, current_word, guessed_words
+    global ALL_WORDS, CLUE_GIVER, CURRENT_ROUND
+    global CURRENT_WORD, GUESSED_WORDS, RED_TEAM_CYCLE, BLUE_TEAM_CYCLE
     print("start game")
 
-    current_round = 1
-
-    red_team_order = copy.deepcopy(list(team_members["red"]))
-    blue_team_order = copy.deepcopy(list(team_members["blue"]))
-    random.shuffle(red_team_order)
-    random.shuffle(blue_team_order)
-    if guessing_team == RED_TEAM:
-        clue_giver = red_team_order[0]
+    CURRENT_ROUND = 1
+    RED_TEAM_CYCLE = itertools.cycle(
+        random.sample(list(TEAM_MEMBERS["red"]), len(TEAM_MEMBERS["red"])))
+    BLUE_TEAM_CYCLE = itertools.cycle(
+        random.sample(list(TEAM_MEMBERS["blue"]), len(TEAM_MEMBERS["blue"])))
+    if GUESSING_TEAM == RED_TEAM:
+        CLUE_GIVER = next(RED_TEAM_CYCLE)
     else:
-        clue_giver = blue_team_order[0]
+        CLUE_GIVER = next(BLUE_TEAM_CYCLE)
 
-    red_words = set([w for name, w in submitted_words.items() if name in team_members["red"]])
-    blue_words = set([w for name, w in submitted_words.items() if name in team_members["blue"]])
-    all_words = list(set.union(red_words, blue_words))
-    current_word = all_words[0]
+    red_words = set([w for name, w in submitted_words.items() if name in TEAM_MEMBERS["red"]])
+    blue_words = set([w for name, w in submitted_words.items() if name in TEAM_MEMBERS["blue"]])
+    ALL_WORDS = list(set.union(red_words, blue_words))
+    CURRENT_WORD = ALL_WORDS[0]
 
     # TODO: add socketio handler for teams, and display
-    print("Start game:", clue_giver, current_round, current_word, all_words)
+    print("Start game:", CLUE_GIVER, CURRENT_ROUND, CURRENT_WORD, ALL_WORDS)
     start_round()
 
 
-@socketio.on('start')
+@socketio.on('start round')
 def start_round():
     global thread
-    print("START")
+    print("START ROUND")
     with thread_lock:
         if thread is None:
-            thread = socketio.start_background_task(count_minute_background)
+            thread = socketio.start_background_task(round_countdown)
+    thread = None
 
 
-def count_minute_background():
+def round_countdown():
     """Example of how to send server generated events to clients."""
-    global is_live_round
-    is_live_round = True
-    count = 60
+    global IS_LIVE_ROUND, GUESSING_TEAM, CLUE_GIVER
+    IS_LIVE_ROUND = True
+    count = 10
     while count > 0:
         socketio.sleep(1)
         print(count)
@@ -246,14 +242,32 @@ def count_minute_background():
             {
                 'data': 'Countdown for round',
                 'count': count,
-                'current_round': current_round,
-                'current_word': current_word,
-                'clue_giver': clue_giver,
+                'CURRENT_ROUND': CURRENT_ROUND,
+                'CURRENT_WORD': CURRENT_WORD,
+                'CLUE_GIVER': CLUE_GIVER,
             },
             namespace='',
         )
     print("round is NOT live")
-    is_live_round = False
+    IS_LIVE_ROUND = False
+    switch_guess_team()
+    pass_clue_giver()
+
+    if IS_ROUND_DONE:
+        reset_round()
+
+
+def switch_guess_team():
+    global GUESSING_TEAM
+    GUESSING_TEAM = RED_TEAM if GUESSING_TEAM == BLUE_TEAM else BLUE_TEAM
+
+
+def pass_clue_giver():
+    global CLUE_GIVER, GUESSING_TEAM
+    if GUESSING_TEAM == RED_TEAM:
+        CLUE_GIVER = next(RED_TEAM_CYCLE)
+    else:
+        CLUE_GIVER = next(BLUE_TEAM_CYCLE)
 
 
 @socketio.on("delete channel")
@@ -280,3 +294,27 @@ def on_join(room_to_join):
     print("joining room")
     join_room(room_to_join)
     emit("join channel ack", room=room_to_join)
+
+
+# def connect_db():
+#     return sqlite3.connect(DATABASE)
+#
+#
+# @app.before_request
+# def before_request():
+#     g.db = connect_db()
+#
+#
+# @app.teardown_request
+# def teardown_request(exception):
+#     if hasattr(g, 'db'):
+#         g.db.close()
+#
+#
+# def query_db(query, args=(), one=False):
+#     cur = g.db.execute(query, args)
+#     rv = [
+#         dict((cur.description[idx][0], value) for idx, value in enumerate(row))
+#         for row in cur.fetchall()
+#     ]
+#     return (rv[0] if rv else None) if one else rv
