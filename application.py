@@ -120,6 +120,7 @@ def create_channel(new_channel):
 
 @socketio.on("send message")
 def send_message(message_data):
+    global guessing_team
     # print(channel_list)
     channel = message_data["current_channel"]
     channel_message_count = len(channel_list[channel])
@@ -130,11 +131,16 @@ def send_message(message_data):
         del channel_list[channel][0]
         message_data["deleted_message"] = True
 
+    emit("recieve message", message_data, broadcast=True, room=channel)
     if is_live_round:
         message_content = message_data["message_content"]
-        check_guess(message_content)
-
-    emit("recieve message", message_data, broadcast=True, room=channel)
+        if check_guess(message_content):
+            message_data["message_content"] = "Point for Team %s" % guessing_team
+            emit("recieve message", message_data, broadcast=True, room=channel)
+            m = "Score: Team Red: %s, Team blue: %s" % (team_points[RED_TEAM],
+                                                        team_points[BLUE_TEAM])
+            message_data["message_content"] = m
+            emit("recieve message", message_data, broadcast=True, room=channel)
 
 
 def check_guess(message_content):
@@ -148,9 +154,11 @@ def check_guess(message_content):
         print("all, remaining")
         print(all_words, remaining_words)
         if not remaining_words:
-            current_word = "ALL DONE"
+            current_word = "ALL DONE: ROUND OVER"
         else:
             current_word = random.choice(list(remaining_words))
+        return True
+    return False
 
 
 @socketio.on("send word")
@@ -214,10 +222,8 @@ def start_game():
 
 @socketio.on('start')
 def start_round():
-    global is_live_round
     global thread
     print("START")
-    is_live_round = True
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(count_minute_background)
@@ -226,6 +232,7 @@ def start_round():
 def count_minute_background():
     """Example of how to send server generated events to clients."""
     global is_live_round
+    is_live_round = True
     count = 60
     while count > 0:
         socketio.sleep(1)
