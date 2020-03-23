@@ -30,6 +30,7 @@
                 </form>
                 {% endfor %}
             </ul>
+
             <form id="word-form">
                 <div class="input-group mb-1 message-input">
                     <input id="word-input" type="text" class="form-control" placeholder="Submit my word here"
@@ -41,8 +42,39 @@
                     </div>
                 </div>
             </form>
+            <form id="team-form">
+                <div class="input-group mb-1 message-input">
+                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                        <label class="btn btn-danger active">
+                            <input type="radio" name="options" id="red" autocomplete="off" checked> Red Team
+                        </label>
+                        <label class="btn btn-primary">
+                            <input type="radio" name="options" id="blue" autocomplete="off"> Blue Team
+                        </label>
+                    </div>
+                </div>
+            </form>
+            <div class="start-game">
+                <button id="submit-start-game" type="submit" class="btn btn-light add-button">
+                    <div id="start">Start Game!</div>
+                </button>
+            </div>
         </div>
+        <!-- <div id="team-view" class="comment-container">
+            <ul id="redteam">
+            </ul>
+            <ul id="blueteam">
+            </ul>
+        </div> -->
         <div id="message-view" class="col color-message-test">
+            <div id="countdown">
+                Round Timer
+            </div>
+            <div id="cluegiver">
+                Clue giver:
+            </div>
+            <div id="currentword">
+            </div>
             <div class="comment-container">
                 <ul id="comment-list" class="list-unstyled">
                 </ul>

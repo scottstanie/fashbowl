@@ -1,10 +1,12 @@
 // Promp user to enter display_name if not set yet
 if (!localStorage.getItem('display_name') &&
     !localStorage.getItem('current_channel') &&
+    !localStorage.getItem('current_team') &&
     !localStorage.getItem('comment_stack')) {
   var username = prompt('Enter a display name ');
   localStorage.setItem('display_name', username);
   localStorage.setItem('current_channel', 'general');
+  localStorage.setItem('current_team', '');
   localStorage.setItem('comment_stack', JSON.stringify({'general': 110}));
 }
 
@@ -35,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
       doc = parser.parseFromString(channel_element, 'text/xml');
   document.querySelector('#message-view')
       .prepend(doc.querySelector('#channel-title'));
+
 
   function asynch_load_messages(request, refresh) {
     /*
@@ -196,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
+    ////////////
     // event for word submission
     document.querySelector('#submit-send-word').onclick = () => {
       /* Event for any message being sent */
@@ -222,8 +226,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // When a message is broadcast to a channel, recieve the message, and add it
-  // to the message view
+  //// Team Selection /////
+  document.querySelector('#blue').onclick = () => {
+    console.log('blue');
+    let message_data = {
+      'user': localStorage.getItem('display_name'),
+      'current_channel': localStorage.getItem('current_channel'),
+      'team': 'blue'
+    };
+    console.log(message_data);
+    socket.emit('select team', message_data);
+  };
+  document.querySelector('#red').onclick = () => {
+    console.log('red');
+    let message_data = {
+      'user': localStorage.getItem('display_name'),
+      'current_channel': localStorage.getItem('current_channel'),
+      'team': 'red'
+    };
+    console.log(message_data);
+    socket.emit('select team', message_data);
+  };
+  document.querySelector('#start').onclick = () => {
+    console.log('emit start game');
+    socket.emit('start game');
+  };
+
+
+
+  // When a message is broadcast to a channel, recieve the message,
+  // and add it to the message view
   socket.on('recieve message', message_data => {
     // Create a comment element and add to message view
 
@@ -265,6 +297,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     li.scrollIntoView();
   });
+
+  socket.on('countdown', message_data => {
+    // const li = document.createElement('li');
+    // li.setAttribute('class', 'media comment-item');
+    let count = message_data['count'];
+    let clue_giver = message_data['clue_giver'];
+    let current_word = message_data['current_word'];
+    let username = localStorage.getItem('display_name');
+    is_giver = (username === clue_giver);
+    // console.log('is giver:');
+    // console.log(is_giver);
+
+    document.querySelector('#countdown').innerHTML = count;
+    document.querySelector('#cluegiver').innerHTML =
+        'Clue giver:' + message_data['clue_giver'];
+    if (is_giver) {
+      document.querySelector('#currentword').innerHTML =
+          'Your word to give:' + current_word;
+    }
+  });
+
 
   socket.on('announce channel deletion', message_data => {
     var deleted_channel = message_data['deleted_channel'];
