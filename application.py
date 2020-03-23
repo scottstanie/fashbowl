@@ -19,9 +19,9 @@ socketio = SocketIO(app)
 channel_list = {"general": []}
 present_channel = {"initial": "general"}
 
-# submitted_words[channel][user]:
-# submitted_words = defaultdict(lambda: defaultdict(str))
-submitted_words = defaultdict(str)
+# SUBMITTED_WORDS[channel][user]:
+# SUBMITTED_WORDS = defaultdict(lambda: defaultdict(str))
+SUBMITTED_WORDS = defaultdict(str)
 
 # TODO: add scoreboard, add CLEAR ALL button
 
@@ -130,12 +130,6 @@ def send_message(message_data):
             # emit("recieve message", message_data, broadcast=True, room=channel)
 
 
-def reset_round():
-    global CURRENT_ROUND, GUESSED_WORDS
-    CURRENT_ROUND += 1
-    GUESSED_WORDS = set()
-
-
 def check_guess(message_content):
     global ALL_WORDS, CURRENT_WORD, GUESSING_TEAM, GUESSED_WORDS, TEAM_POINTS, IS_ROUND_DONE
     print("GUESED!", message_content, CURRENT_WORD)
@@ -151,6 +145,7 @@ def check_guess(message_content):
             IS_ROUND_DONE = True
         else:
             CURRENT_WORD = random.choice(list(remaining_words))
+            IS_ROUND_DONE = False
         return True
     return False
 
@@ -158,17 +153,18 @@ def check_guess(message_content):
 # For writing down word at beginning and sticking in the fishbowl
 @socketio.on("send word")
 def send_word(message_data):
+    global SUBMITTED_WORDS
     print(message_data)
     # channel = message_data["current_channel"]
     user = message_data["user"]
 
     # TODO: check here for bad word
 
-    # if submitted_words[channel][user]:
-    submitted_words[user] = message_data["submitted_word"]
+    # if SUBMITTED_WORDS[channel][user]:
+    SUBMITTED_WORDS[user] = message_data["submitted_word"]
     # emit("recieve word", message_data, broadcast=True, room=channel)
     print("submitted words:")
-    print(submitted_words)
+    print(SUBMITTED_WORDS)
 
 
 @socketio.on("select team")
@@ -205,10 +201,10 @@ def start_game():
     else:
         CLUE_GIVER = next(BLUE_TEAM_CYCLE)
 
-    red_words = set([w for name, w in submitted_words.items() if name in TEAM_MEMBERS["red"]])
-    blue_words = set([w for name, w in submitted_words.items() if name in TEAM_MEMBERS["blue"]])
+    red_words = set([w for name, w in SUBMITTED_WORDS.items() if name in TEAM_MEMBERS["red"]])
+    blue_words = set([w for name, w in SUBMITTED_WORDS.items() if name in TEAM_MEMBERS["blue"]])
     ALL_WORDS = list(set.union(red_words, blue_words))
-    CURRENT_WORD = ALL_WORDS[0]
+    CURRENT_WORD = random.choice(ALL_WORDS)
 
     # TODO: add socketio handler for teams, and display
     print("Start game:", CLUE_GIVER, CURRENT_ROUND, CURRENT_WORD, ALL_WORDS)
@@ -217,8 +213,9 @@ def start_game():
 
 @socketio.on('start round')
 def start_round():
-    global thread
+    global thread, CURRENT_WORD
     print("START ROUND")
+    CURRENT_WORD = random.choice(ALL_WORDS)
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(round_countdown)
@@ -242,9 +239,9 @@ def round_countdown():
             {
                 'data': 'Countdown for round',
                 'count': count,
-                'CURRENT_ROUND': CURRENT_ROUND,
-                'CURRENT_WORD': CURRENT_WORD,
-                'CLUE_GIVER': CLUE_GIVER,
+                'current_round': CURRENT_ROUND,
+                'current_word': CURRENT_WORD,
+                'clue_giver': CLUE_GIVER,
             },
             namespace='',
         )
@@ -268,6 +265,15 @@ def pass_clue_giver():
         CLUE_GIVER = next(RED_TEAM_CYCLE)
     else:
         CLUE_GIVER = next(BLUE_TEAM_CYCLE)
+
+
+def reset_round():
+    global CURRENT_ROUND, GUESSED_WORDS, CURRENT_WORD
+    print("RESET ROUND")
+    CURRENT_ROUND += 1
+    CURRENT_WORD = ""
+    GUESSED_WORDS = set()
+    IS_ROUND_DONE = False
 
 
 @socketio.on("delete channel")
