@@ -124,6 +124,16 @@ def send_message(message_data):
             # emit("recieve message", message_data, broadcast=True, room=channel)
 
 
+@socketio.on("skip")
+def skip_word():
+    global CURRENT_WORD
+    remaining_words = _get_remaining_words(exclude=CURRENT_WORD)
+    print("Skipping word %s" % CURRENT_WORD)
+    print("Choosing from ", remaining_words)
+    CURRENT_WORD = random.choice(list(remaining_words))
+    print("New word: %s" % CURRENT_WORD)
+
+
 def update_scoreboard():
     global TEAM_POINTS
     print("Updating scoreboard:")
@@ -138,9 +148,12 @@ def update_scoreboard():
     )
 
 
-def _get_remaining_words():
+def _get_remaining_words(exclude=None):
     global ALL_WORDS, GUESSED_WORDS
     remaining_words = set.difference(set(ALL_WORDS), set(GUESSED_WORDS))
+    if exclude is not None and set(exclude) != remaining_words:  # ignore if 1 remains
+        print("EXCLUDING", exclude, "from", remaining_words)
+        remaining_words = set.difference(remaining_words, set([exclude]))
     return remaining_words
 
 
