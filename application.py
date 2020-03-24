@@ -151,7 +151,7 @@ def update_scoreboard():
 def _get_remaining_words(exclude=None):
     global ALL_WORDS, GUESSED_WORDS
     remaining_words = set.difference(set(ALL_WORDS), set(GUESSED_WORDS))
-    if exclude is not None and set(exclude) != remaining_words:  # ignore if 1 remains
+    if exclude is not None and set([exclude]) != remaining_words:  # ignore if 1 remains
         print("EXCLUDING", exclude, "from", remaining_words)
         remaining_words = set.difference(remaining_words, set([exclude]))
     return remaining_words
