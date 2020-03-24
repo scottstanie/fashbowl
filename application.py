@@ -1,4 +1,5 @@
 import os
+import re
 import itertools
 from threading import Lock
 import copy
@@ -157,10 +158,17 @@ def _get_remaining_words(exclude=None):
     return remaining_words
 
 
+alphaonly_pattern = re.compile('[\W_]+', re.UNICODE)
+
+
 def check_guess(message_content):
     global ALL_WORDS, CURRENT_WORD, GUESSING_TEAM, GUESSED_WORDS, TEAM_POINTS, IS_ROUND_DONE
-    print("GUESED!", message_content, CURRENT_WORD)
-    if message_content.lower() == CURRENT_WORD.lower():
+
+    # remove all except alphas/numbers
+    guess = alphaonly_pattern.sub('', message_content.lower())
+    truth = alphaonly_pattern.sub('', CURRENT_WORD.lower())
+    print("GUESED (filtered):", guess, truth)
+    if guess == truth:
         print("RIGHT")
         TEAM_POINTS[GUESSING_TEAM] += 1
         GUESSED_WORDS.add(CURRENT_WORD)
