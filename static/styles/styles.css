@@ -104,14 +104,14 @@ h5, #time {
   outline: none; }
 
 .comment-container {
-  margin-top: 15px;
+  margin-top: 5px;
   overflow-y: scroll;
   margin-left: auto;
   margin-right: auto;
   background-color: white;
   width: 105%;
-  height: 80%;
-  padding: 10px 10px 10px 33px; }
+  height: 70%;
+  padding: 5px 5px 5px 23px; }
   .comment-container .comment-item {
     margin-right: 25px;
     text-align: left;

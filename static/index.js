@@ -286,12 +286,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const div_comment = document.createElement('div');
     div_comment.setAttribute('class', 'comment-comment');
     div_comment.innerHTML = message_data['message_content'];
+    if (message_data['message_color'] !== 'undefined') {
+      div_comment.style.color = message_data['message_color'];
+    }
 
     div_media_body.appendChild(h5);
     div_media_body.appendChild(div_time);
     div_media_body.appendChild(div_comment);
 
     li.appendChild(div_media_body);
+
 
     document.querySelector('#comment-list').append(li);
     if (!message_data['deleted_message']) {

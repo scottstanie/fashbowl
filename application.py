@@ -116,6 +116,7 @@ def send_message(message_data):
         guess_result = check_guess(message_content)
         if guess_result is True:
             message_data["message_content"] = "Point for Team %s!!" % GUESSING_TEAM
+            message_data["message_color"] = GUESSING_TEAM
             emit("recieve message", message_data, broadcast=True, room=channel)
             update_scoreboard()
             # m = "Score: Team Red: %s, Team blue: %s" % (TEAM_POINTS[RED_TEAM], TEAM_POINTS[BLUE_TEAM])
