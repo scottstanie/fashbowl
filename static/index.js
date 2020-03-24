@@ -259,6 +259,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('emit reset all game');
     socket.emit('reset');
   };
+  document.querySelector('#skip').onclick = () => {
+    console.log('emit skip');
+    socket.emit('skip');
+  };
 
 
   // When a message is broadcast to a channel, recieve the message,
