@@ -265,7 +265,7 @@ def round_countdown():
     """Example of how to send server generated events to clients."""
     global IS_LIVE_ROUND, GUESSING_TEAM, CLUE_GIVER
     IS_LIVE_ROUND = True
-    count = 10
+    count = 60
     while count > 0:
         socketio.sleep(1)
         print(count)
