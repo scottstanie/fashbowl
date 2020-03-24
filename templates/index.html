@@ -56,20 +56,35 @@
             </form>
             <div class="start-game">
                 <button id="submit-start-game" type="submit" class="btn btn-secondary add-button">
-                    <div id="start">Reset and Start Game!</div>
-                </button>
-            </div>
-            <div class="start-round">
-                <button id="submit-start-round" type="submit" class="btn btn-light add-button">
-                    <div id="startround">Start timer!</div>
+                    <div id="start">Players ready: Start new game!</div>
                 </button>
             </div>
             <div id="team-scores" class="channel-heading team-scores">
                 <div id="redteam">
-                    Red Team:
+                    Red Score:
                 </div>
                 <div id="blueteam">
-                    Blue Team:
+                    Blue Score:
+                </div>
+            </div>
+            <div class="start-round">
+                <button id="submit-start-round" type="submit" class="btn btn-light ">
+                    <div id="startround">Start new round timer!</div>
+                </button>
+            </div>
+            <div class="reset">
+                <button id="submit-reset" type="submit" class="btn btn-primary btn-lg btn-block">
+                    <div id="reset">Reset all game data</div>
+                </button>
+            </div>
+            <div id="team-players">
+                <div>
+                    <p style="color:white"> Red Team players:</p>
+                    <div style="color:white" id="redplayers"> </div>
+                </div>
+                <div>
+                    <p style="color:white"> Blue Team players:</p>
+                    <div style="color:white" id="blueplayers"> </div>
                 </div>
             </div>
         </div>

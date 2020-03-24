@@ -181,6 +181,14 @@ def select_team(message_data):
     # emit("recieve word", message_data, broadcast=True, room=channel)
     print("teams:")
     print(TEAM_MEMBERS)
+    emit(
+        "player update",
+        {
+            "red": ",".join(TEAM_MEMBERS[RED_TEAM]),
+            "blue": ",".join(TEAM_MEMBERS[BLUE_TEAM]),
+        },
+        broadcast=True,
+    )
     # TODO: add socketio handler for teams, and display
     # emit("recieve team", message_data, broadcast=True, room=channel)
 
@@ -274,6 +282,30 @@ def reset_round():
     CURRENT_WORD = ""
     GUESSED_WORDS = set()
     IS_ROUND_DONE = False
+
+
+def reset_all_game():
+    global CURRENT_ROUND, GUESSED_WORDS, CURRENT_WORD, CLUE_GIVER
+    CURRENT_ROUND = 0
+    CURRENT_WORD = ""
+    GUESSED_WORDS = set()
+    IS_ROUND_DONE = False
+    IS_LIVE_ROUND = False
+    TEAM_MEMBERS = defaultdict(set)
+    # TEAM_POINTS["blue"] = 1
+    TEAM_POINTS = defaultdict(int)
+    RED_TEAM_CYCLE = None
+    BLUE_TEAM_CYCLE = None
+
+    # # CURRENT_ROUND[channel] = 1  OR 2, or 3
+    # CURRENT_ROUND = defaultdict(int)
+    IS_LIVE_ROUND = False
+    CURRENT_ROUND = 0
+    CLUE_GIVER = ""
+    ALL_WORDS = []
+    CURRENT_WORD = ""
+    GUESSED_WORDS = set()
+    GUESSING_TEAM = RED_TEAM
 
 
 @socketio.on("delete channel")

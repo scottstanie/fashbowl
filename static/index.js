@@ -326,9 +326,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let bluescore = message_data['blue'];
 
     document.querySelector('#redteam').innerHTML =
-        'Red Team: ' + String(redscore);
+        'Red Score: ' + String(redscore);
     document.querySelector('#blueteam').innerHTML =
-        'Blue Team: ' + String(bluescore);
+        'Blue Score: ' + String(bluescore);
+  });
+  socket.on('player update', message_data => {
+    // const li = document.createElement('li');
+    // li.setAttribute('class', 'media comment-item');
+    let redplayers = message_data['red'];
+    let blueplayers = message_data['blue'];
+
+    document.querySelector('#redplayers').innerHTML = redplayers;
+    document.querySelector('#blueplayers').innerHTML = blueplayers;
   });
 
 
