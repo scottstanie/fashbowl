@@ -248,14 +248,17 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.emit('select team', message_data);
   };
   document.querySelector('#start').onclick = () => {
-    console.log('emit start game');
+    console.log('emit start new game');
     socket.emit('start game');
   };
   document.querySelector('#startround').onclick = () => {
     console.log('emit start round');
     socket.emit('start round');
   };
-
+  document.querySelector('#reset').onclick = () => {
+    console.log('emit reset all game');
+    socket.emit('reset');
+  };
 
 
   // When a message is broadcast to a channel, recieve the message,

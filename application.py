@@ -117,17 +117,30 @@ def send_message(message_data):
         if guess_result is True:
             message_data["message_content"] = "Point for Team %s!!" % GUESSING_TEAM
             emit("recieve message", message_data, broadcast=True, room=channel)
-            emit(
-                "score update",
-                {
-                    "red": TEAM_POINTS[RED_TEAM],
-                    "blue": TEAM_POINTS[BLUE_TEAM]
-                },
-                broadcast=True,
-            )
+            update_scoreboard()
             # m = "Score: Team Red: %s, Team blue: %s" % (TEAM_POINTS[RED_TEAM], TEAM_POINTS[BLUE_TEAM])
             # message_data["message_content"] = m
             # emit("recieve message", message_data, broadcast=True, room=channel)
+
+
+def update_scoreboard():
+    global TEAM_POINTS
+    print("Updating scoreboard:")
+    print(TEAM_POINTS)
+    emit(
+        "score update",
+        {
+            "red": TEAM_POINTS[RED_TEAM],
+            "blue": TEAM_POINTS[BLUE_TEAM]
+        },
+        broadcast=True,
+    )
+
+
+def _get_remaining_words():
+    global ALL_WORDS, GUESSED_WORDS
+    remaining_words = set.difference(set(ALL_WORDS), set(GUESSED_WORDS))
+    return remaining_words
 
 
 def check_guess(message_content):
@@ -137,9 +150,10 @@ def check_guess(message_content):
         print("RIGHT")
         TEAM_POINTS[GUESSING_TEAM] += 1
         GUESSED_WORDS.add(CURRENT_WORD)
-        remaining_words = set.difference(set(ALL_WORDS), set(GUESSED_WORDS))
-        print("all, remaining")
-        print(ALL_WORDS, remaining_words)
+
+        remaining_words = _get_remaining_words()
+        print("all, guessed, remaining")
+        print(ALL_WORDS, GUESSED_WORDS, remaining_words)
         if not remaining_words:
             CURRENT_WORD = "ALL DONE: ROUND OVER"
             IS_ROUND_DONE = True
@@ -179,7 +193,12 @@ def select_team(message_data):
     other_team = RED_TEAM if team == BLUE_TEAM else BLUE_TEAM
     TEAM_MEMBERS[other_team].discard(user)
     # emit("recieve word", message_data, broadcast=True, room=channel)
-    print("teams:")
+    update_playerlist()
+
+
+def update_playerlist():
+    global TEAM_MEMBERS
+    print("updating player list. teams:")
     print(TEAM_MEMBERS)
     emit(
         "player update",
@@ -189,8 +208,6 @@ def select_team(message_data):
         },
         broadcast=True,
     )
-    # TODO: add socketio handler for teams, and display
-    # emit("recieve team", message_data, broadcast=True, room=channel)
 
 
 @socketio.on("start game")
@@ -223,7 +240,7 @@ def start_game():
 def start_round():
     global thread, CURRENT_WORD
     print("START ROUND")
-    CURRENT_WORD = random.choice(ALL_WORDS)
+    CURRENT_WORD = random.choice(list(_get_remaining_words()))
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(round_countdown)
@@ -284,28 +301,28 @@ def reset_round():
     IS_ROUND_DONE = False
 
 
+@socketio.on('reset')
 def reset_all_game():
-    global CURRENT_ROUND, GUESSED_WORDS, CURRENT_WORD, CLUE_GIVER
-    CURRENT_ROUND = 0
-    CURRENT_WORD = ""
-    GUESSED_WORDS = set()
+    # TODO: so studpid, just use a database dummy
+    global IS_ROUND_DONE, IS_LIVE_ROUND, TEAM_MEMBERS, TEAM_POINTS, RED_TEAM_CYCLE
+    global BLUE_TEAM_CYCLE, CURRENT_ROUND, CLUE_GIVER, ALL_WORDS, CURRENT_WORD
+    global GUESSED_WORDS, GUESSING_TEAM
+    print("Reseting all game data")
+
     IS_ROUND_DONE = False
     IS_LIVE_ROUND = False
     TEAM_MEMBERS = defaultdict(set)
-    # TEAM_POINTS["blue"] = 1
     TEAM_POINTS = defaultdict(int)
     RED_TEAM_CYCLE = None
     BLUE_TEAM_CYCLE = None
-
-    # # CURRENT_ROUND[channel] = 1  OR 2, or 3
-    # CURRENT_ROUND = defaultdict(int)
-    IS_LIVE_ROUND = False
     CURRENT_ROUND = 0
     CLUE_GIVER = ""
     ALL_WORDS = []
     CURRENT_WORD = ""
     GUESSED_WORDS = set()
     GUESSING_TEAM = RED_TEAM
+    update_playerlist()
+    update_scoreboard()
 
 
 @socketio.on("delete channel")
