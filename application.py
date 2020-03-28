@@ -2,11 +2,10 @@ import os
 import re
 import itertools
 from threading import Lock
-import copy
-from flask import Flask, render_template, request, jsonify, g
+from flask import Flask, render_template, request, jsonify  # , g
 from flask_socketio import SocketIO, emit, join_room, leave_room
 # import json
-import sqlite3
+# import sqlite3
 from collections import defaultdict
 import random
 
@@ -120,7 +119,7 @@ def send_message(message_data):
             message_data["message_color"] = GUESSING_TEAM
             emit("recieve message", message_data, broadcast=True, room=channel)
             update_scoreboard()
-            # m = "Score: Team Red: %s, Team blue: %s" % (TEAM_POINTS[RED_TEAM], TEAM_POINTS[BLUE_TEAM])
+            # m = "Score: Red: %s, blue: %s" % (TEAM_POINTS[RED_TEAM], TEAM_POINTS[BLUE_TEAM])
             # message_data["message_content"] = m
             # emit("recieve message", message_data, broadcast=True, room=channel)
 
@@ -158,7 +157,7 @@ def _get_remaining_words(exclude=None):
     return remaining_words
 
 
-alphaonly_pattern = re.compile('[\W_]+', re.UNICODE)
+alphaonly_pattern = re.compile(r'[\W_]+', re.UNICODE)
 
 
 def check_guess(message_content):
@@ -315,7 +314,7 @@ def pass_clue_giver():
 
 
 def reset_round():
-    global CURRENT_ROUND, GUESSED_WORDS, CURRENT_WORD
+    global CURRENT_ROUND, GUESSED_WORDS, CURRENT_WORD, IS_ROUND_DONE
     print("RESET ROUND")
     CURRENT_ROUND += 1
     CURRENT_WORD = ""

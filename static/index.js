@@ -320,14 +320,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let clue_giver = message_data['clue_giver'];
     let current_word = message_data['current_word'];
     let username = localStorage.getItem('display_name');
-    is_giver = (username === clue_giver);
+    let is_giver = (username === clue_giver);
+    let round_is_done = parseInt(count) === 0;
     // console.log('is giver:');
     // console.log(is_giver);
 
+    // TODO: if count == 0, BIG STOP
     document.querySelector('#countdown').innerHTML = count;
+
     document.querySelector('#cluegiver').innerHTML =
         'Clue giver:' + message_data['clue_giver'];
-    let clueString = is_giver ? 'Your word to give:' + current_word : '';
+    let clueString = '';
+    if (round_is_done) {
+      clueString = 'TIME\'S UP!! STOP GUESSING!'
+    } else {
+      clueString = is_giver ? 'Your word to give:' + current_word : '';
+    }
     document.querySelector('#currentword').innerHTML = clueString;
   });
   socket.on('score update', message_data => {
