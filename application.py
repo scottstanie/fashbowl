@@ -21,7 +21,8 @@ present_channel = {"initial": "general"}
 
 # SUBMITTED_WORDS[channel][user]:
 # SUBMITTED_WORDS = defaultdict(lambda: defaultdict(str))
-SUBMITTED_WORDS = defaultdict(str)
+# SUBMITTED_WORDS = defaultdict(str)
+SUBMITTED_WORDS = set()
 
 # TODO: add scoreboard, add CLEAR ALL button
 
@@ -196,7 +197,8 @@ def send_word(message_data):
     # TODO: check here for bad word
 
     # if SUBMITTED_WORDS[channel][user]:
-    SUBMITTED_WORDS[user] = message_data["submitted_word"]
+    # SUBMITTED_WORDS[user] = message_data["submitted_word"]
+    SUBMITTED_WORDS.add(message_data["submitted_word"])
     # emit("recieve word", message_data, broadcast=True, room=channel)
     print("submitted words:")
     print(SUBMITTED_WORDS)
@@ -233,7 +235,7 @@ def update_playerlist():
 
 @socketio.on("start game")
 def start_game():
-    global ALL_WORDS, CLUE_GIVER, CURRENT_ROUND
+    global ALL_WORDS, CLUE_GIVER, CURRENT_ROUND, SUBMITTED_WORDS
     global CURRENT_WORD, GUESSED_WORDS, RED_TEAM_CYCLE, BLUE_TEAM_CYCLE
     print("start game")
 
@@ -247,9 +249,10 @@ def start_game():
     else:
         CLUE_GIVER = next(BLUE_TEAM_CYCLE)
 
-    red_words = set([w for name, w in SUBMITTED_WORDS.items() if name in TEAM_MEMBERS["red"]])
-    blue_words = set([w for name, w in SUBMITTED_WORDS.items() if name in TEAM_MEMBERS["blue"]])
-    ALL_WORDS = list(set.union(red_words, blue_words))
+    # red_words = set([w for name, w in SUBMITTED_WORDS.items() if name in TEAM_MEMBERS["red"]])
+    # blue_words = set([w for name, w in SUBMITTED_WORDS.items() if name in TEAM_MEMBERS["blue"]])
+    # ALL_WORDS = list(set.union(red_words, blue_words))
+    ALL_WORDS = list(SUBMITTED_WORDS)
     CURRENT_WORD = random.choice(ALL_WORDS)
 
     # TODO: add socketio handler for teams, and display
