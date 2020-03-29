@@ -330,7 +330,7 @@ def reset_all_game():
     # TODO: so studpid, just use a database dummy
     global IS_ROUND_DONE, IS_LIVE_ROUND, TEAM_MEMBERS, TEAM_POINTS, RED_TEAM_CYCLE
     global BLUE_TEAM_CYCLE, CURRENT_ROUND, CLUE_GIVER, ALL_WORDS, CURRENT_WORD
-    global GUESSED_WORDS, GUESSING_TEAM
+    global GUESSED_WORDS, GUESSING_TEAM, SUBMITTED_WORDS
     print("Reseting all game data")
 
     IS_ROUND_DONE = False
@@ -344,6 +344,7 @@ def reset_all_game():
     ALL_WORDS = []
     CURRENT_WORD = ""
     GUESSED_WORDS = set()
+    SUBMITTED_WORDS = set()
     GUESSING_TEAM = RED_TEAM
     update_playerlist()
     update_scoreboard()
