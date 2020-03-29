@@ -199,6 +199,9 @@ def send_word(message_data):
     # if SUBMITTED_WORDS[channel][user]:
     # SUBMITTED_WORDS[user] = message_data["submitted_word"]
     SUBMITTED_WORDS.add(message_data["submitted_word"])
+    message_data["message_content"] = "Total words: %s" % len(SUBMITTED_WORDS)
+
+    emit("recieve message", message_data, broadcast=True)
     # emit("recieve word", message_data, broadcast=True, room=channel)
     print("submitted words:")
     print(SUBMITTED_WORDS)
