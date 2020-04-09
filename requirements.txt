@@ -1,7 +1,8 @@
-Flask
-Flask-SocketIO
-gevent
-gevent-websocket
-gunicorn
-requests
-
+pdbpp
+mysqlclient==1.3.13
+djangorestframework==3.9.1
+django-filter==1.1.0
+channels==2.3.0
+channels-redis==2.4.1
+Django>=2.2.10
+Markdown==2.6.10
