@@ -2,6 +2,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from pprint import pprint
+from . import utils
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -24,7 +25,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         # pprint("connect: ChatConsumer")
         # print("self.scope")
-        # pprint(self.scope)
+        # pprint(self.scope['user'])
 
         # user_id = self.scope["session"]["_auth_user_id"]
         # self.group_name = "{}".format(user_id)
@@ -33,11 +34,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # print("self.channel_name:", self.channel_name)
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        msg = "{} has entered the room.".format(self.scope["user"].username)
+        event = utils.make_message_event(self.room_name, msg, private=False, type_="game_update")
+        await self.channel_layer.group_send(self.room_group_name, event)
         await self.accept()
 
     async def disconnect(self, close_code):
         # print("disconnect")
         # Leave room group
+        msg = "{} has left the room.".format(self.scope["user"].username)
+        event = utils.make_message_event(self.room_name, msg, private=False, type_="game_update")
+        await self.channel_layer.group_send(self.room_group_name, event)
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     # Receive message from WebSocket
