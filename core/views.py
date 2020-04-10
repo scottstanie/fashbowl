@@ -114,7 +114,7 @@ def command(request):
             # loop.create_task(turn_countdown(room))
             asyncio.run(turn_countdown(room))
     elif command == CMD_SKIP_WORD:
-        if request.user == game.clue_giver() and game.is_live_turn:
+        if request.user == game.clue_giver().user and game.is_live_turn:
             game.next_word()
             msg = "Skipping... new word."
             utils.notify_ws_game_update(room, msg, request.user.username)

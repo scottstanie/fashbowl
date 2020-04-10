@@ -23,7 +23,6 @@ TEAM_CHOICES = [("red", "red"), ("blue", "blue")]
 RED_TEAM, BLUE_TEAM = TEAM_CHOICES
 RED_TEAM_NAME, BLUE_TEAM_NAME = RED_TEAM[1], BLUE_TEAM[1]
 TEAM_NAMES = [RED_TEAM_NAME, BLUE_TEAM_NAME]
-ROUND_CHOICES = [(1, "round one"), (2, "round two"), (3, "round three"), (4, "postgame")]
 
 
 class Game(Model):
@@ -35,7 +34,7 @@ class Game(Model):
 
     # Populated with time.time()
     turn_start_timeint = models.IntegerField(blank=True, null=True)
-    current_round = models.IntegerField(default=ROUND_CHOICES[0][0], choices=ROUND_CHOICES)
+    current_round = models.IntegerField(default=1)
 
     # Setable attributes:
     turn_length = models.IntegerField(default=30, validators=[MinValueValidator(0)])
@@ -68,15 +67,14 @@ class Game(Model):
         return self.red_giver if self.current_guessing_team == RED_TEAM_NAME else self.blue_giver
 
     def red_points(self):
-        return len(Point.objects.filter(player__game__id=self.id, player__team='red'))
+        return len(Point.objects.filter(game__id=self.id, team='red'))
 
     def blue_points(self):
-        return len(Point.objects.filter(player__game__id=self.id, player__team='blue'))
+        return len(Point.objects.filter(game__id=self.id, team='blue'))
 
     # Aux helper methods:
     def _guessed_words_query(self):
-        return Point.objects.filter(
-            Q(player__game__id=self.id) & Q(round_scored=self.current_round))
+        return Point.objects.filter(Q(game__id=self.id) & Q(round_scored=self.current_round))
 
     def guessed_words(self):
         points = self._guessed_words_query()
@@ -208,7 +206,13 @@ class Game(Model):
         success = utils.notify_ws_game_update(self.room, msg, None)
         word = Word.objects.get(id=self.current_word.id)
         player = Player.objects.get(game=self, user=guesser_user)
-        new_point = Point(player=player, round_scored=self.current_round, word=word)
+        new_point = Point(
+            player=player,
+            word=word,
+            round_scored=self.current_round,
+            game=self,
+            team=self.current_guessing_team,
+        )
         new_point.save()  # Updates for guessed_words too
 
         remaining_words = self.remaining_words()
@@ -267,7 +271,10 @@ class Point(Model):
     """A score form correct guess by a User in a game"""
     player = ForeignKey(Player, on_delete=CASCADE, db_index=True)
     word = ForeignKey(Word, on_delete=CASCADE)
-    round_scored = models.IntegerField(default=ROUND_CHOICES[0][0], choices=ROUND_CHOICES)
+    round_scored = models.IntegerField(default=0)
+    # in case player leaves:
+    team = CharField(max_length=500, choices=TEAM_CHOICES, db_index=True)
+    game = ForeignKey(Game, on_delete=CASCADE, db_index=True)
 
 
 class Message(Model):
