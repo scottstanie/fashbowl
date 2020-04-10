@@ -12,6 +12,9 @@ from . import models
 from . import utils
 # from pprint import pprint
 
+ERR_TOO_LONG = "too long"
+ERR_MAX_PER_PLAYER = "max words reached"
+
 CMD_HELP = 'help'
 CMD_JOIN = 'join'
 CMD_SUBMIT_WORD = 'submit'
@@ -19,32 +22,37 @@ CMD_START_TURN = 'start'
 CMD_LIST_WORDS = 'mywords'
 CMD_CLEAR_WORDS = 'clearwords'
 CMD_SKIP_WORD = 'skip'
-CMD_LEAVE_TEAM = 'leave'
 CMD_CURRENT_GIVER = 'upnow'
 CMD_NEXT_GIVER = 'upnext'
+CMD_LEAVE_TEAM = 'leave'
 CMD_REMOVE_PLAYER = 'remove'
 CMD_SET_CONFIG = 'set'
 CMD_GET_CONFIG = 'settings'
 
-ERR_TOO_LONG = "too long"
+CMD_HELP_STRS = [
+    (CMD_HELP, '<-- see this message'),
+    (CMD_JOIN, "[red or blue] <-- join a team"),
+    (CMD_SUBMIT_WORD, '[word] <-- goes into the fishbowl'),
+    (CMD_START_TURN, '<-- start the next turn '),
+    (CMD_LIST_WORDS, '<-- see what you submitted'),
+    (CMD_CLEAR_WORDS, '<-- erases your words'),
+    (CMD_SKIP_WORD, '<--- if you are clue giving, skip to next word '),
+    (CMD_CURRENT_GIVER, '<--- see the current clue givers '),
+    (CMD_NEXT_GIVER, '<--- see the next clue giver'),
+    (CMD_LEAVE_TEAM, '<--- leave the game (removes you from either team)'),
+    (CMD_REMOVE_PLAYER, '<--- removes [name] from either team '),
+    (CMD_SET_CONFIG,
+     '[option] [value]  <- set the words_per_player, max_word_length, turn_length or red_giver/blue_giver'
+     ),
+    (CMD_GET_CONFIG, '<- see current game settings'),
+]
 
 
 def get_help():
-    out = """Commands: <br />
-/join [red or blue] <br />
-/submit [word, goes into fishbowl!]<br />
-/mywords    <--- see what you submitted <br />
-/clearwords <--- erases your words <br />
-/skip       <--- if you are clue giving, skip to next word <br />
-/upnext     <--- see the current clue givers <br />
-/upnext     <--- see the next clue givers <br />
-/leave      <--- leave the game (removes you from either team) <br />
-/remove     <--- removes yourself from either team <br /> 
-/remove [name] <--- removes [name] from either team <br /> 
-/set [option] [value]  <- set the max_word_length, turn_length or red_giver/blue_giver  <br />
-/settings   <- see current game settings
-    """
-    return out
+    out = "Commands: <br />"
+    for (cmd, helpstr) in CMD_HELP_STRS:
+        out += f"/{cmd} {helpstr} <br />"
+    return out.rstrip("<br />")
 
 
 @require_http_methods(["GET"])
@@ -75,6 +83,7 @@ def command(request):
     game, created_game = models.Game.objects.get_or_create(room=room)
     message = request.POST.get('body')
     command, *cmd_args = message.split(' ')
+    cmd_args = [c for c in cmd_args if c]
     # TODO: maybe other cleaning of comands
     command = command.replace("'", "").replace('"', '').strip('/')
     print('room, game, command, cmd_args, request.user')
@@ -105,6 +114,11 @@ def command(request):
             return JsonResponse({"success": False})
         if created == ERR_TOO_LONG:
             msg = "Too long! max length: {}".format(game.max_word_length)
+        elif created == ERR_MAX_PER_PLAYER:
+            msg = (
+                f"You're only allowed to submit {game.words_per_player}!"
+                f" check em with /{CMD_LIST_WORDS} or change with /{CMD_SET_CONFIG} words_per_player"
+            )
         elif created is True:
             msg = "Added word: \"{}\"".format(text)
         else:
@@ -208,6 +222,10 @@ def submit_player_word(room, game, user, cmd_args):
             return text, ERR_TOO_LONG
 
         player, created_game = models.Player.objects.get_or_create(game=game, user=user)
+        # TODO: stop if exceeded game.max_words
+        if models.Word.objects.filter(player=player).count() >= game.words_per_player:
+            print("TOO MANY SUBMITTED")
+            return text, ERR_MAX_PER_PLAYER
 
         word, created_word = models.Word.objects.get_or_create(player=player, text=text)
         return text, created_word
@@ -241,11 +259,8 @@ def remove_player(room, game, request_user, cmd_args):
 
 def set_game_config(room, game, user, cmd_args):
     try:
-        if cmd_args[0].lower() == "turn_length":
-            game.turn_length = int(cmd_args[1])
-            game.save()
-        elif cmd_args[0].lower() == "max_word_length":
-            game.max_word_length = int(cmd_args[1])
+        if cmd_args[0].lower() in ("turn_length", "max_word_length", "words_per_player"):
+            setattr(game, cmd_args[0], int(cmd_args[1]))
             game.save()
         elif cmd_args[0].lower() == "red_giver":
             try:
@@ -272,11 +287,13 @@ def set_game_config(room, game, user, cmd_args):
     except Exception as e:
         print(e)
         return "Errored: {}".format(e)
-    return "Success: set {} to {}".format(cmd_args[1], cmd_args[0])
+    return "Success: set {} to {}".format(cmd_args[0], cmd_args[1])
 
 
 def get_game_config(room, game, user):
-    return "Turn length: {}, Max word length: {}".format(game.turn_length, game.max_word_length)
+    return (f"words_per_player: {game.words_per_player}, "
+            f"turn_length: {game.turn_length}, "
+            f" max_word_length: {game.max_word_length}")
 
 
 async def turn_countdown(room):

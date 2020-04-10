@@ -39,7 +39,7 @@ class Game(Model):
     # Setable attributes:
     turn_length = models.IntegerField(default=30, validators=[MinValueValidator(0)])
     max_word_length = models.IntegerField(default=100, validators=[MinValueValidator(0)])
-
+    words_per_player = models.IntegerField(default=3, validators=[MinValueValidator(0)])
     is_live_turn = models.BooleanField(default=False)
     # If we finish the round with time left, keep track
     remaining_seconds = models.IntegerField(default=0, validators=[MinValueValidator(0)])
