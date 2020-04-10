@@ -106,7 +106,7 @@ def command(request):
         else:
             msg = "You've already submitted \"{}\"".format(text)
         notify_ws_clients_private(room, msg, request.user.username)
-        utils.notify_ws_game_update(room, None, request.user.username)
+        utils.notify_ws_game_update(room, None, request.user.username, game=game)
     elif command == CMD_START_TURN:
         if not game.is_live_turn:
             utils.notify_ws_game_update(room, "Starting Round...", None)
@@ -336,11 +336,11 @@ def check_final_state(room, time_left):
     if game.is_round_done():
         print("round done")
         msg = "Thats the end of round {}!!".format(game.current_round)
-        success = utils.notify_ws_game_update(room, msg, None)
+        success = utils.notify_ws_game_update(room, msg, None, game=game)
         game.end_round(time_left)
     else:
         msg = "Time's up for Team {}!!".format(game.current_guessing_team)
-        success = utils.notify_ws_game_update(room, msg, None)
+        success = utils.notify_ws_game_update(room, msg, None, game=game)
         game.end_turn()
 
 
