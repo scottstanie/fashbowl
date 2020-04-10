@@ -241,8 +241,11 @@ class Player(Model):
                                      editable=False,
                                      db_index=True)
 
-    def __str__(self):
+    def __repr__(self):
         return "Player {}: {} in {}, team {}".format(self.id, self.user, self.game.room, self.team)
+
+    def __str__(self):
+        return self.user.username
 
 
 class Word(Model):
