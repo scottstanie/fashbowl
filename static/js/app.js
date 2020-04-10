@@ -207,7 +207,7 @@ $(document).ready(function() {
 });
 
 function updateGame(currentRoom, gameState) {
-  console.log('updateGamyye')
+  console.log('updateGame')
   drawGameState(gameState);
   getGameUsers(currentRoom);
 }

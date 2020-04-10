@@ -22,13 +22,14 @@ PROJECT_ROOT = BASE_DIR
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/dev/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'ABC1234')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', False)
-DEBUG = False
-
+DEBUG = os.environ.get('DEBUG').lower() == 'true'
+print("Debug:", DEBUG, type(DEBUG))
+# SECURITY WARNING: keep the secret key used in production secret!
+if DEBUG is False:
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+else:
+    SECRET_KEY = 'asdfjkl;'
 # Application definition
 
 INSTALLED_APPS = [
@@ -82,14 +83,14 @@ WSGI_APPLICATION = 'fashbowl.wsgi.application'
 
 # https://channels.readthedocs.io/en/latest/deploying.html
 ASGI_APPLICATION = "fashbowl.routing.application"
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("redis-server-name", 6379)],
-        },
-    },
-}
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("redis-server-name", 6379)],
+#         },
+#     },
+# }
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "asgi_redis.RedisChannelLayer",
@@ -104,6 +105,7 @@ CHANNEL_LAYERS = {
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
 if DEBUG is True:
+    print("YES")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -113,6 +115,7 @@ if DEBUG is True:
         },
     }
 else:
+    print("NO")
     DATABASES = {'default': dj_database_url.config()}
 
 # Password validation
@@ -175,9 +178,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
 # http://whitenoise.evans.io/en/stable/
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-# STATICFILES_DIRS = (os.path.join(BASE_DIR, 'staticfiles'), )
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'), )
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Static files (CSS, JavaScript, Images)

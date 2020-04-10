@@ -46,14 +46,14 @@ class Game(Model):
     remaining_seconds = models.IntegerField(default=0, validators=[MinValueValidator(0)])
 
     red_giver = ForeignKey(
-        User,
+        "Player",
         null=True,
         blank=True,
         on_delete=CASCADE,
         related_name='red_giver',
     )
     blue_giver = ForeignKey(
-        User,
+        "Player",
         null=True,
         blank=True,
         on_delete=CASCADE,
@@ -72,19 +72,6 @@ class Game(Model):
 
     def blue_points(self):
         return len(Point.objects.filter(player__game__id=self.id, player__team='blue'))
-
-    def _clue_giver_idx(self):
-        if self.current_guessing_team == RED_TEAM_NAME:
-            try:
-                giver_idx = self.red_team().index(self.red_giver)
-            except ValueError:
-                giver_idx = -1
-        else:
-            try:
-                giver_idx = self.blue_team().index(self.blue_giver)
-            except ValueError:
-                giver_idx = -1
-        return giver_idx
 
     # Aux helper methods:
     def _guessed_words_query(self):
@@ -112,17 +99,46 @@ class Game(Model):
     def num_words_remaining(self):
         return len(self.remaining_words())
 
+    def _team(self, team_name):
+        return Player.objects.filter(game=self, team=team_name).order_by("joined_timestamp")
+        # return [p.user for p in pq]
+
     def red_team(self):
-        return [
-            p.user for p in Player.objects.filter(game=self, team=RED_TEAM_NAME).order_by(
-                "joined_timestamp")
-        ]
+        """Returns list of Player objects"""
+        return list(self._team(RED_TEAM_NAME))
 
     def blue_team(self):
-        return [
-            p.user for p in Player.objects.filter(game=self, team=BLUE_TEAM_NAME).order_by(
-                "joined_timestamp")
-        ]
+        """Returns list of Player objects"""
+        return list(self._team(BLUE_TEAM_NAME))
+
+    def _clue_giver_idx(self, team=None):
+        """returns an index of the current giver"""
+        if team is None:
+            team = self.current_guessing_team
+        if team == RED_TEAM_NAME:
+            try:
+                giver_idx = self.red_team().index(self.red_giver)
+            except ValueError:
+                giver_idx = -1
+        else:
+            try:
+                giver_idx = self.blue_team().index(self.blue_giver)
+            except ValueError:
+                giver_idx = -1
+        return giver_idx
+
+    def next_clue_givers(self):
+        red_idx = self._clue_giver_idx(RED_TEAM_NAME)
+        blue_idx = self._clue_giver_idx(BLUE_TEAM_NAME)
+        if len(self.red_team()) == 0:
+            next_red_giver = None
+        else:
+            next_red_giver = self.red_team()[(red_idx + 1) % len(self.red_team())]
+        if len(self.blue_team()) == 0:
+            next_blue_giver = None
+        else:
+            next_blue_giver = self.blue_team()[(blue_idx + 1) % len(self.blue_team())]
+        return next_red_giver, next_blue_giver
 
     # #### Game logic methods ####
     def is_round_done(self):
@@ -137,10 +153,13 @@ class Game(Model):
         return self.current_word
 
     def start_turn(self):
+        # First round game starting checks:
         if not self.current_guessing_team:
             self.current_guessing_team = random.choice(TEAM_NAMES)
             self.save(update_fields=['current_guessing_team'])
-        self.pass_clue_giver()
+        if not self.clue_giver():
+            self.pass_clue_giver()
+
         self.is_live_turn = True
         self.current_word = self._pick_word()
         self.turn_start_timeint = time.time()
@@ -148,6 +167,7 @@ class Game(Model):
 
     def end_turn(self):
         self.is_live_turn = False
+        self.pass_clue_giver()
         self.switch_guess_team()
         self.current_word = None
         self.remaining_seconds = 0
@@ -166,13 +186,11 @@ class Game(Model):
         self.save(update_fields=['current_guessing_team'])
 
     def pass_clue_giver(self):
-        idx = self._clue_giver_idx()
+        next_red_giver, next_blue_giver = self.next_clue_givers()
         if self.current_guessing_team == RED_TEAM_NAME:
-            users = self.red_team()
-            self.red_giver = users[(idx + 1) % len(users)]
+            self.red_giver = next_red_giver
         else:
-            users = self.blue_team()
-            self.blue_giver = users[(idx + 1) % len(users)]
+            self.blue_giver = next_blue_giver
         self.save(update_fields=['red_giver', 'blue_giver'])
 
     alphaonly_pattern = re.compile(r'[\W_]+', re.UNICODE)

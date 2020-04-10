@@ -19,6 +19,7 @@ def make_message_event(
     type_="receive_private_message",
     submitter=None,
     private=True,
+    game=None,
 ):
     """Direct message (no db saved Message object)
     Can be public or private
@@ -38,6 +39,8 @@ def make_message_event(
         "private": private,
         "admin": admin,
     }
+    if game is not None:
+        event["game_state"] = game_to_dict(game)
     return event
 
 
@@ -46,13 +49,15 @@ def get_group(room):
     return room_group_name
 
 
-def notify_ws_game_update(room, message_text, user):
-    """ Inform one client there is a new message (for commands) """
+def notify_ws_game_update(room, message_text, user, game=None):
+    """ Inform clients there is a game state update (with possible message)
+     used by commands """
     event = make_message_event(room,
                                message_text,
                                private=False,
                                submitter=user,
-                               type_="game_update")
+                               type_="game_update",
+                               game=game)
     print("in notify_ws_game_update, event:", event)
     channel_layer = get_channel_layer()
     room_group_name = get_group(room)
