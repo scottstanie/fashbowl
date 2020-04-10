@@ -48,7 +48,9 @@ function drawGameState(data) {
   $('#bluescore').text('Blue score: ' + data.red_points)
   $('#round').text('Round: ' + data.current_round)
   $('#guessingTeam').text('Guessing Team: ' + data.current_guessing_team)
-  $('#timer').text('Timer: ' + data.time_left)
+  $('#numRemainingWords').text('Remaining words: ' + data.num_words_remaining)
+  let timeLeftStr = (data.time_left === undefined) ? 0 : data.time_left
+  $('#timer').text('Timer: ' + timeLeftStr)
   $('#clueGiver').text('Giver: ' + data.clue_giver)
   let $curWord = $('#currentWord')
   if (data.clue_giver === currentUser && data.time_left > 0) {

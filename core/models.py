@@ -36,7 +36,11 @@ class Game(Model):
     # Populated with time.time()
     turn_start_timeint = models.IntegerField(blank=True, null=True)
     current_round = models.IntegerField(default=ROUND_CHOICES[0][0], choices=ROUND_CHOICES)
+
+    # Setable attributes:
     turn_length = models.IntegerField(default=30, validators=[MinValueValidator(0)])
+    max_word_length = models.IntegerField(default=100, validators=[MinValueValidator(0)])
+
     is_live_turn = models.BooleanField(default=False)
     # If we finish the round with time left, keep track
     remaining_seconds = models.IntegerField(default=0, validators=[MinValueValidator(0)])
@@ -58,17 +62,16 @@ class Game(Model):
 
     current_guessing_team = CharField(max_length=50, null=True, blank=True, choices=TEAM_CHOICES)
 
-    # current_word = CharField(max_length=50, null=True, blank=True)
     current_word = ForeignKey("Word", null=True, blank=True, on_delete=CASCADE)
+
+    def clue_giver(self):
+        return self.red_giver if self.current_guessing_team == RED_TEAM_NAME else self.blue_giver
 
     def red_points(self):
         return len(Point.objects.filter(player__game__id=self.id, player__team='red'))
 
     def blue_points(self):
         return len(Point.objects.filter(player__game__id=self.id, player__team='blue'))
-
-    def clue_giver(self):
-        return self.red_giver if self.current_guessing_team == RED_TEAM_NAME else self.blue_giver
 
     def _clue_giver_idx(self):
         if self.current_guessing_team == RED_TEAM_NAME:
@@ -106,6 +109,9 @@ class Game(Model):
         return words
         # return [w.text for w in words]
 
+    def num_words_remaining(self):
+        return len(self.remaining_words())
+
     def red_team(self):
         return [
             p.user for p in Player.objects.filter(game=self, team=RED_TEAM_NAME).order_by(
@@ -120,8 +126,15 @@ class Game(Model):
 
     # #### Game logic methods ####
     def is_round_done(self):
-        return len(self.remaining_words()) == 0
-        # return set(self.guessed_words()) == set(self.all_words())
+        return self.num_words_remaining() == 0
+
+    def _pick_word(self):
+        return random.choice(self.remaining_words())
+
+    def next_word(self):
+        self.current_word = self._pick_word()
+        self.save(update_fields=['current_word'])
+        return self.current_word
 
     def start_turn(self):
         if not self.current_guessing_team:
@@ -129,7 +142,7 @@ class Game(Model):
             self.save(update_fields=['current_guessing_team'])
         self.pass_clue_giver()
         self.is_live_turn = True
-        self.current_word = random.choice(self.remaining_words())
+        self.current_word = self._pick_word()
         self.turn_start_timeint = time.time()
         self.save(update_fields=['is_live_turn', 'current_word', 'turn_start_timeint'])
 
@@ -184,8 +197,7 @@ class Game(Model):
         print("all, guessed, remaining")
         print(self.all_words(), self.guessed_words(), remaining_words)
         if remaining_words:
-            self.current_word = random.choice(remaining_words)
-            self.save(update_fields=['current_word'])
+            self.next_word()
         else:
             print("ENDING ROUND")
             # self.end_round()  # SHould happen in event loop

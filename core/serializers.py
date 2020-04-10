@@ -36,6 +36,7 @@ class GameSerializer(ModelSerializer):
     current_word = CharField(source='current_word.text', read_only=True)
     red_points = IntegerField(read_only=True)
     blue_points = IntegerField(read_only=True)
+    num_words_remaining = IntegerField(read_only=True)
 
     class Meta:
         model = Game
@@ -57,6 +58,7 @@ class GameSerializer(ModelSerializer):
             'clue_giver',
             'current_guessing_team',
             'current_word',
+            'num_words_remaining',
         )
 
 

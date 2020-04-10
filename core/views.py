@@ -11,11 +11,31 @@ from asgiref.sync import async_to_sync
 from . import models
 from . import utils
 # from pprint import pprint
+
+CMD_HELP = 'help'
 CMD_JOIN = 'join'
 CMD_SUBMIT_WORD = 'submit'
 CMD_START_TURN = 'start'
 CMD_LIST_WORDS = 'mywords'
 CMD_CLEAR_WORDS = 'clearwords'
+CMD_SKIP_WORD = 'skip'
+CMD_SET_CONFIG = 'set'
+CMD_GET_CONFIG = 'settings'
+
+ERR_TOO_LONG = "too long"
+
+
+def get_help():
+    out = """Commands: <br />
+/join [red or blue] <br />
+/submit [word, goes into fishbowl!]<br />
+/mywords    <--- see what you submitted <br />
+/clearwords <--- erases your words <br />
+/skip       <--- if you are clue giving, skip to next word <br />
+/set [option] [value]  <- set the max_word_length or turn_length <br />
+/settings   <- see current game settings
+    """
+    return out
 
 
 @require_http_methods(["GET"])
@@ -50,42 +70,61 @@ def command(request):
     command = command.replace("'", "").replace('"', '').strip('/')
     print('room, game, command, cmd_args, request.user')
     print(room, game, command, cmd_args, request.user)
-    if command == CMD_JOIN:
+    if command == CMD_HELP:
+        msg = get_help()
+        notify_ws_clients_private(room, msg, request.user.username)
+    elif command == CMD_JOIN:
         name, team = add_player_to_team(room, game, request.user, cmd_args)
         msg = "added {} to {}".format(name, team)
-        success = utils.notify_ws_game_update(room, msg, request.user.username)
+        utils.notify_ws_game_update(room, msg, request.user.username)
     elif command == CMD_LIST_WORDS:
         word_list = get_player_words(room, game, request.user)
         msg = "Your words: {}".format(", ".join(word_list))
-        success = notify_ws_clients_private(room, msg, request.user.username)
+        notify_ws_clients_private(room, msg, request.user.username)
     elif command == CMD_CLEAR_WORDS:
         num_deleted = clear_player_words(room, game, request.user)
         msg = "Erased all {} of your words.".format(num_deleted)
         notify_ws_clients_private(room, msg, request.user.username)
-        success = utils.notify_ws_game_update(room, None, None)
+        utils.notify_ws_game_update(room, None, None)
     elif command == CMD_SUBMIT_WORD:
         text, created = submit_player_word(room, game, request.user, cmd_args)
         if not text:
             return JsonResponse({"success": False})
-        if created is True:
+        if created == ERR_TOO_LONG:
+            msg = "Too long! max length: {}".format(game.max_word_length)
+        elif created is True:
             msg = "Added word: \"{}\"".format(text)
         else:
             msg = "You've already submitted \"{}\"".format(text)
-        success = notify_ws_clients_private(room, msg, request.user.username)
-        success = utils.notify_ws_game_update(room, None, request.user.username)
+        notify_ws_clients_private(room, msg, request.user.username)
+        utils.notify_ws_game_update(room, None, request.user.username)
     elif command == CMD_START_TURN:
-        utils.notify_ws_game_update(room, "Starting Round...", None)
-        # loop = asyncio.get_event_loop()
-        # loop.create_task(turn_countdown(room))
-        asyncio.run(turn_countdown(room))
-        success = True
+        if not game.is_live_turn:
+            utils.notify_ws_game_update(room, "Starting Round...", None)
+            # loop = asyncio.get_event_loop()
+            # loop.create_task(turn_countdown(room))
+            asyncio.run(turn_countdown(room))
+    elif command == CMD_SKIP_WORD:
+        if request.user == game.clue_giver() and game.is_live_turn:
+            game.next_word()
+            msg = "Skipping... new word."
+            utils.notify_ws_game_update(room, msg, request.user.username)
+        else:
+            msg = "Only the giver can /skip during a live turn!"
+            notify_ws_clients_private(room, msg, request.user.username)
+    elif command == CMD_SET_CONFIG:
+        msg = set_game_config(room, game, request.user, cmd_args)
+        notify_ws_clients_private(room, msg, request.user.username)
+        utils.notify_ws_game_update(room, None, None)
+    elif command == CMD_GET_CONFIG:
+        msg = get_game_config(room, game, request.user)
+        notify_ws_clients_private(room, msg, request.user.username)
     else:
         notify_ws_clients_private(room, "Unknown command: '/{}'".format(command),
                                   request.user.username)
-        success = False
 
     # TODO: make this a more useful json response
-    return JsonResponse({"success": success})
+    return JsonResponse({"success": True})
 
 
 def notify_ws_clients_private(room, message_text, user):
@@ -97,19 +136,6 @@ def notify_ws_clients_private(room, message_text, user):
     print("sending", event, "to ", room_group_name)
     async_to_sync(channel_layer.group_send)(room_group_name, event)
     return True
-
-
-def notify_ws_start_turn(room):
-    print("in notify_ws_start_turn")
-    channel_layer = get_channel_layer()
-    room_group_name = utils.get_group(room)
-    message = {"starting": True}
-    event = {
-        # 'type': 'receive_game_update',
-        'type': 'start_turn',
-        'message': message,
-    }
-    async_to_sync(channel_layer.group_send)(room_group_name, event)
 
 
 def add_player_to_team(room, game, user, cmd_args):
@@ -149,6 +175,9 @@ def submit_player_word(room, game, user, cmd_args):
         text = ' '.join(cmd_args)
         if not text:
             return text, False
+        if len(text) > game.max_word_length:
+            print("TOO LONG")
+            return text, ERR_TOO_LONG
 
         player, created_game = models.Player.objects.get_or_create(game=game, user=user)
 
@@ -157,6 +186,27 @@ def submit_player_word(room, game, user, cmd_args):
     except Exception as e:
         print(e)
         return text, False
+
+
+def set_game_config(room, game, user, cmd_args):
+    try:
+        if cmd_args[0].lower() == "turn_length":
+            game.turn_length = int(cmd_args[1])
+            game.save()
+            return "Success"
+        elif cmd_args[0].lower() == "max_word_length":
+            game.max_word_length = int(cmd_args[1])
+            game.save()
+            return "Success"
+        else:
+            return "Unknown argument"
+    except Exception as e:
+        print(e)
+        return "Errored: {}".format(e)
+
+
+def get_game_config(room, game, user):
+    return "Turn length: {}, Max word length: {}".format(game.turn_length, game.max_word_length)
 
 
 async def turn_countdown(room):
