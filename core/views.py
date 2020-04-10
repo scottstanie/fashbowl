@@ -36,8 +36,11 @@ def get_help():
 /mywords    <--- see what you submitted <br />
 /clearwords <--- erases your words <br />
 /skip       <--- if you are clue giving, skip to next word <br />
+/upnext     <--- see the current clue givers <br />
+/upnext     <--- see the next clue givers <br />
 /leave      <--- leave the game (removes you from either team) <br />
-/upnext     <--- see who are the next clue givers <br />
+/remove     <--- removes yourself from either team <br /> 
+/remove [name] <--- removes [name] from either team <br /> 
 /set [option] [value]  <- set the max_word_length, turn_length or red_giver/blue_giver  <br />
 /settings   <- see current game settings
     """
