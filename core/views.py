@@ -336,12 +336,12 @@ def check_final_state(room, time_left):
     if game.is_round_done():
         print("round done")
         msg = "Thats the end of round {}!!".format(game.current_round)
-        success = utils.notify_ws_game_update(room, msg, None, game=game)
         game.end_round(time_left)
+        success = utils.notify_ws_game_update(room, msg, None, game=game)
     else:
         msg = "Time's up for Team {}!!".format(game.current_guessing_team)
-        success = utils.notify_ws_game_update(room, msg, None, game=game)
         game.end_turn()
+        success = utils.notify_ws_game_update(room, msg, None, game=game)
 
 
 class ChatView(TemplateView):

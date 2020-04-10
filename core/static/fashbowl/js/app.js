@@ -45,11 +45,12 @@ function drawGameState(data) {
   console.log(data)
   // userList.children('.score').remove();
   $('#redscore').text('Red score: ' + data.red_points)
-  $('#bluescore').text('Blue score: ' + data.red_points)
+  $('#bluescore').text('Blue score: ' + data.blue_points)
   $('#round').text('Round: ' + data.current_round)
   $('#guessingTeam').text('Guessing Team: ' + data.current_guessing_team)
   $('#numRemainingWords').text('Remaining words: ' + data.num_words_remaining)
-  let timeLeftStr = (data.time_left === undefined) ? 0 : data.time_left
+  let timeLeftStr =
+      (data.time_left === undefined) ? data.remaining_seconds : data.time_left
   $('#timer').text('Timer: ' + timeLeftStr)
   $('#clueGiver').text('Giver: ' + data.clue_giver)
   let $curWord = $('#currentWord')

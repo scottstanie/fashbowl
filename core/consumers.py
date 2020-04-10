@@ -22,34 +22,34 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_group_name = 'room_group_%s' % self.room_name
 
     async def connect(self):
-        pprint("connect: ChatConsumer")
+        # pprint("connect: ChatConsumer")
         # print("self.scope")
         # pprint(self.scope)
 
         # user_id = self.scope["session"]["_auth_user_id"]
         # self.group_name = "{}".format(user_id)
         # Join room group
-        print("self.room_group_name:", self.room_group_name)
-        print("self.channel_name:", self.channel_name)
+        # print("self.room_group_name:", self.room_group_name)
+        # print("self.channel_name:", self.channel_name)
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        print("disconnect")
+        # print("disconnect")
         # Leave room group
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     # Receive message from WebSocket
     async def receive(self, text_data=None, bytes_data=None):
-        print("chatconsumer receive:")
-        print("self.scope")
+        # print("chatconsumer receive:")
+        # print("self.scope")
         pprint(self.scope)
 
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         # Send message to room group
-        print('room group name', self.room_group_name)
+        # print('room group name', self.room_group_name)
         await self.channel_layer.group_send(self.room_group_name, {
             'type': 'receive_group_message',
             'message': message
@@ -57,8 +57,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive_group_message(self, event):
         message_id = event['message_id']
-        print("chatconsumer receive_group_message")
-        print("event:", event)
+        # print("chatconsumer receive_group_message")
+        # print("event:", event)
 
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
@@ -66,8 +66,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     async def receive_private_message(self, event):
-        print("chatconsumer receive_private_message:")
-        print("event:", event)
+        # print("chatconsumer receive_private_message:")
+        # print("event:", event)
         # Send message to WebSocket
         await self.send(text_data=json.dumps(event))
 
