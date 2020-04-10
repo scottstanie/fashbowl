@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 
 import os
 
+import dj_database_url
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from os.path import join
 
@@ -76,17 +77,40 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'fashbowl.wsgi.application'
 
+# https://channels.readthedocs.io/en/latest/deploying.html
+ASGI_APPLICATION = "fashbowl.routing.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis-server-name", 6379)],
+        },
+    },
+}
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgi_redis.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
+        },
+        # "ROUTING": "fashbowl.routing.application",
+    },
+}
+
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'fashbowl',
-        'HOST': 'localhost',
-        'PORT': '5432'
-    },
-}
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'fashbowl',
+            'HOST': 'localhost',
+            'PORT': '5432'
+        },
+    }
+else:
+    DATABASES = {'default': dj_database_url.config()}
 
 # Password validation
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
