@@ -195,11 +195,11 @@ LOGIN_URL = '/login/'
 
 ALLOWED_HOSTS = ['*']
 
-# Import local_settings.py
-try:
-    from local_settings import *
-except ImportError:
-    pass
+# # Import local_settings.py
+# try:
+#     from local_settings import *
+# except ImportError:
+#     pass
 
 ASGI_APPLICATION = 'fashbowl.routing.application'
 CHANNEL_LAYERS = {
