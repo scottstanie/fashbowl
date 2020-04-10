@@ -26,7 +26,8 @@ PROJECT_ROOT = BASE_DIR
 SECRET_KEY = os.environ.get('SECRET_KEY', 'ABC1234')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True')
+DEBUG = os.environ.get('DEBUG', False)
+DEBUG = False
 
 # Application definition
 
@@ -102,7 +103,7 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
-if DEBUG:
+if DEBUG is True:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
