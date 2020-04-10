@@ -83,9 +83,13 @@ def command(request):
         msg = get_help()
         notify_ws_clients_private(room, msg, request.user.username)
     elif command == CMD_JOIN:
-        name, team = add_player_to_team(room, game, request.user, cmd_args)
-        msg = "added {} to {}".format(name, team)
-        utils.notify_ws_game_update(room, msg, request.user.username, game=game)
+        if len(cmd_args) < 1 or not cmd_args[0]:
+            notify_ws_clients_private(room, 'Need to say "/join red" or "/join blue"',
+                                      request.user.username)
+        else:
+            name, team = add_player_to_team(room, game, request.user, cmd_args)
+            msg = "added {} to {}".format(name, team)
+            utils.notify_ws_game_update(room, msg, request.user.username, game=game)
     elif command == CMD_LIST_WORDS:
         word_list = get_player_words(room, game, request.user)
         msg = "Your words: {}".format(", ".join(word_list))
