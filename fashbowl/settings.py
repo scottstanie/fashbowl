@@ -67,7 +67,8 @@ ROOT_URLCONF = 'fashbowl.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [join(BASE_DIR, 'templates')],
+        'DIRS': [join(BASE_DIR, 'fashbowl', 'templates')],
+        # 'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -80,10 +81,42 @@ TEMPLATES = [
     },
 ]
 
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/dev/howto/static-files/
+
+# http://whitenoise.evans.io/en/stable/
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+#STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'), )
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/3.0/howto/static-files/
+
+STATIC_URL = '/static/'
+
+# if DEBUG is False:
+#     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# else:
+#     STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'), )
+
 WSGI_APPLICATION = 'fashbowl.wsgi.application'
 
 # https://channels.readthedocs.io/en/latest/deploying.html
 ASGI_APPLICATION = "fashbowl.routing.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        # "BACKEND": "asgi_redis.RedisChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
+        },
+        #  ROUTING key found for default - this is no longer needed in Channels 2.
+        # "ROUTING": "fashbowl.routing.application",
+    },
+}
+
 # CHANNEL_LAYERS = {
 #     "default": {
 #         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -92,21 +125,25 @@ ASGI_APPLICATION = "fashbowl.routing.application"
 #         },
 #     },
 # }
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "asgi_redis.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
-        },
-        # "ROUTING": "fashbowl.routing.application",
-    },
-}
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [('127.0.0.1', 6379)],
+#         },
+#     },
+# }
 
+# Could be changed to the config below to scale:
+# "BACKEND": "asgi_redis.RedisChannelLayer",
+# "CONFIG": {
+#     "hosts": [("localhost", 6379)],
+# },
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
-if DEBUG is True:
-    print("YES")
+if DEBUG is True or True:
+    print("DATABASE DEBUG YES")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -116,7 +153,7 @@ if DEBUG is True:
         },
     }
 else:
-    print("NO")
+    print("DATABASE DEBUG NO")
     DATABASES = {'default': dj_database_url.config()}
 
 # Password validation
@@ -153,17 +190,6 @@ REST_FRAMEWORK = {
 MESSAGES_TO_LOAD = 15
 
 # In settings.py
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "asgiref.inmemory.ChannelLayer",
-        "ROUTING": "core.routing.channel_routing",
-    },
-}
-# Could be changed to the config below to scale:
-# "BACKEND": "asgi_redis.RedisChannelLayer",
-# "CONFIG": {
-#     "hosts": [("localhost", 6379)],
-# },
 
 LANGUAGE_CODE = 'en-us'
 
@@ -174,24 +200,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/dev/howto/static-files/
-
-# http://whitenoise.evans.io/en/stable/
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-#STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'), )
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.0/howto/static-files/
-
-STATIC_URL = '/static/'
-
-# if DEBUG is False:
-#     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-# else:
-#     STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'), )
 
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login/'
@@ -204,12 +212,18 @@ ALLOWED_HOSTS = ['*']
 # except ImportError:
 #     pass
 
-ASGI_APPLICATION = 'fashbowl.routing.application'
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'ERROR'),
         },
     },
 }

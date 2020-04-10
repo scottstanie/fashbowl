@@ -1,0 +1,9 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ title }} | {% trans 'Fishbowl' %}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">{% trans 'Fishbowl' %}</h1>
+{% endblock %}

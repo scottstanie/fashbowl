@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="Fishbowl party game">
+    <title>{% block title %}Welcome{% endblock %} | Fishbowl game</title>
+
+    <link rel="stylesheet" href="{% static 'fashbowl/css/bootstrap.min.css' %}">
+    <script src="{% static 'fashbowl/js/jquery.min.js' %}" type="text/javascript"></script>
+    <script src="{% static "fashbowl/js/reconnecting-websocket.min.js" %}" type="text/javascript"></script>
+    <script src="{% static 'fashbowl/js/bootstrap.min.js' %}" type="text/javascript"></script>
+    <link rel="stylesheet" href="{% static 'fashbowl/css/style.css' %}" />
+    <link rel="stylesheet" href="{% static 'fashbowl/ss/font-awesome.min.css' %}" />
+
+    {% block head %}
+    {% endblock %}
+</head>
+
+<body>
+
+    {% include 'core/header.html' %}
+
+    {% block main %}
+    {% endblock %}
+
+</body>
+
+</html>

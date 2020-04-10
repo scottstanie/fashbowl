@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
 
 {% block main %}
@@ -70,6 +70,6 @@
     let currentUser = '{{ request.user.username }}';
 </script>
 <script type="text/javascript"> window.CSRF_TOKEN = "{{ csrf_token }}"; </script>
-<script src="{% static 'js/app.js' %}"></script>
+<script src="{% static 'fashbowl/js/app.js' %}"></script>
 
 {% endblock %}

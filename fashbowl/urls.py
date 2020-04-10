@@ -5,6 +5,7 @@ from .views import SignUpView
 from django.conf import settings
 from django.conf.urls.static import static
 
+print("static url, static_root", settings.STATIC_URL, settings.STATIC_ROOT)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
