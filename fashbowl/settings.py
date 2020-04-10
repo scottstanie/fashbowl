@@ -142,7 +142,7 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
-if DEBUG is True or True:
+if DEBUG is True:  # or True:
     print("DATABASE DEBUG YES")
     DATABASES = {
         'default': {
