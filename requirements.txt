@@ -9,3 +9,4 @@ djangorestframework==3.9.1
 Markdown==2.6.10
 psycopg2
 six
+whitenoise==5.0.1

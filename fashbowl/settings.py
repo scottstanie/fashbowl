@@ -31,6 +31,7 @@ DEBUG = os.environ.get('DEBUG', 'True')
 # Application definition
 
 INSTALLED_APPS = [
+    'whitenoise.runserver_nostatic',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -171,20 +173,21 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
-# Collect static files here
-STATIC_ROOT = join(PROJECT_ROOT, 'run', 'static_root')
+# http://whitenoise.evans.io/en/stable/
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATICFILES_DIRS = (os.path.join(BASE_DIR, 'staticfiles'), )
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Collect media files here
-MEDIA_ROOT = join(PROJECT_ROOT, 'run', 'media_root')
-MEDIA_URL = '/media/'
-
-# look for static assets here
-STATICFILES_DIRS = [
-    join(PROJECT_ROOT, 'static'),
-]
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
-ADMIN_MEDIA_PREFIX = '/static/admin/'
+
+# if DEBUG is False:
+#     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# else:
+#     STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'), )
 
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login/'
