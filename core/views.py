@@ -78,7 +78,7 @@ def game_users(request, room):
 
 @require_http_methods(["POST"])
 def command(request):
-    print("COMMAND view:")
+    # print("COMMAND view:")
     room = request.POST.get('room')
     game, created_game = models.Game.objects.get_or_create(room=room)
     message = request.POST.get('body')
@@ -86,8 +86,8 @@ def command(request):
     cmd_args = [c for c in cmd_args if c]
     # TODO: maybe other cleaning of comands
     command = command.replace("'", "").replace('"', '').strip('/')
-    print('room, game, command, cmd_args, request.user')
-    print(room, game, command, cmd_args, request.user)
+    # print('room, game, command, cmd_args, request.user')
+    # print(room, game, command, cmd_args, request.user)
     if command == CMD_HELP:
         msg = get_help()
         notify_ws_clients_private(room, msg, request.user.username)
@@ -171,11 +171,11 @@ def command(request):
 
 def notify_ws_clients_private(room, message_text, user):
     """ Inform one client there is a new message (for commands) """
-    print("in notify_ws_clients_private")
+    # print("in notify_ws_clients_private")
     event = utils.make_message_event(room, message_text, private=True, submitter=user)
     channel_layer = get_channel_layer()
     room_group_name = utils.get_group(room)
-    print("sending", event, "to ", room_group_name)
+    # print("sending", event, "to ", room_group_name)
     async_to_sync(channel_layer.group_send)(room_group_name, event)
     return True
 
@@ -270,7 +270,7 @@ def set_game_config(room, game, user, cmd_args):
                 game.red_giver = player
                 game.save()
             except Exception as e:
-                print(e)
+                print(f"set_game_config exception: {e}")
                 return "Errored: {}".format(e)
         elif cmd_args[0].lower() == "blue_giver":
             try:
@@ -280,12 +280,12 @@ def set_game_config(room, game, user, cmd_args):
                 game.blue_giver = player
                 game.save()
             except Exception as e:
-                print(e)
+                print(f"set_game_config exception: {e}")
                 return "Errored: {}".format(e)
         else:
             return "Unknown argument"
     except Exception as e:
-        print(e)
+        print(f"set_game_config exception: {e}")
         return "Errored: {}".format(e)
     return "Success: set {} to {}".format(cmd_args[0], cmd_args[1])
 
@@ -332,7 +332,7 @@ async def turn_countdown(room):
         time_left = int(round(turn_length - turn_time_elapsed))
         game_state['time_left'] = time_left
         event['game_state'] = game_state
-        print("time left", time_left)
+        # print("time left", time_left)
 
         await channel_layer.group_send(
             room_group_name,
@@ -340,7 +340,7 @@ async def turn_countdown(room):
         )
         await asyncio.sleep(.4)
 
-    print("Broke out of countdown loop")
+    # print("Broke out of countdown loop")
     await check_final_state(room, time_left)
 
 
@@ -355,7 +355,7 @@ def check_final_state(room, time_left):
     print("check_final_state")
     game = models.Game.objects.get(room=room)
     if game.is_round_done():
-        print("round done")
+        # print("round done")
         msg = "Thats the end of round {}!!".format(game.current_round)
         game.end_round(time_left)
         success = utils.notify_ws_game_update(room, msg, None, game=game)

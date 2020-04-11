@@ -109,10 +109,10 @@ function getMessageById(message_id) {
 }
 
 function sendMessage(room, body) {
-  $.post('/api/v1/message/', {room: room, body: body}).fail(function() {
-    // TODO: dont send alert in real thing
-    alert('Error! Check console!');
-  });
+  $.post('/api/v1/message/', {room: room, body: body})
+      .fail(function(jqXHR, textStatus, error) {
+        console.log('Post error: ' + error);
+      });
 }
 
 function sendCommand(room, body) {
@@ -125,8 +125,8 @@ function sendCommand(room, body) {
        function(data) {
          console.log(data)
        })
-      .fail(function() {
-        alert('Error! Check console!');
+      .fail(function(jqXHR, textStatus, error) {
+        console.log('Post error: ' + error);
       });
 }
 
