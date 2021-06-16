@@ -1,7 +1,7 @@
 channels==2.3.0
 channels-redis==2.4.1
 dj-database-url
-Django==2.2.13
+Django==2.2.24
 django-environ==0.4.5
 django-extensions==2.2.9
 django-filter==1.1.0
